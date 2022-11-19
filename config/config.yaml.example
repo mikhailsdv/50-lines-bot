@@ -1,3 +1,0 @@
-bot_token: ''
-
-mongodb: 'mongodb://localhost:27017/50-lines-bot'
