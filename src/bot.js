@@ -1,9 +1,11 @@
-import env from "./env.js"
-import {Bot, InlineKeyboard, InputFile, HttpError, GrammyError} from "https://deno.land/x/grammy/mod.ts"
-import {trim} from "./utils.js"
-import processImage from "./main.js"
+const {BOT_TOKEN} = require("./env")
+const {Bot, InlineKeyboard, InputFile, HttpError, GrammyError} = require("grammy")
+const {trim} = require("./utils")
+const processImage = require("./main")
+const fs = require("fs");
+const path = require("path")
 
-const bot = new Bot(env.BOT_TOKEN)
+const bot = new Bot(BOT_TOKEN)
 
 bot.catch(err => {
 	const ctx = err.ctx
@@ -37,10 +39,15 @@ bot.command("start", async ctx => {
 })
 
 bot.on("message:photo", async (ctx) => {
-	console.log(ctx)
-	const {file_path} = await bot.api.getFile(ctx.message.photo.at(-1).file_id)
-	const buffer = await processImage(`https://api.telegram.org/file/bot${env.BOT_TOKEN}/${file_path}`)
-	await ctx.replyWithPhoto(new InputFile(buffer))
+	const {file_id, width, height} = ctx.message.photo.at(-1)
+	const {file_path} = await bot.api.getFile(file_id)
+	const streamPath = path.resolve(__dirname, "./image.jpg")
+	const outputStream = fs.createWriteStream(streamPath)
+	outputStream.on("finish", async () => {
+		console.log("finish")
+		await ctx.replyWithPhoto(new InputFile(fs.createReadStream(streamPath)))
+	})
+	const stream = await processImage(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file_path}`, outputStream)
 })
 
-export default bot
+module.exports = bot

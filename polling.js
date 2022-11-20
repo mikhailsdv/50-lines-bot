@@ -1,3 +1,3 @@
-import bot from "./src/bot.js"
+const bot = require("./src/bot.js")
 
 bot.start()

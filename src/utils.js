@@ -5,7 +5,7 @@ const wait = delay => new Promise(resolve => setTimeout(resolve, delay))
 
 const trim = str => str.replace(/\t+|^\n+|\n+$/g, "")
 
-export {
+module.exports = {
   getUserString,
   wait,
   trim

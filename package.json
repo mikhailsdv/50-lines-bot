@@ -1,0 +1,26 @@
+{
+  "name": "50-lines-bot",
+  "version": "1.0.0",
+  "description": "## Original idea by u-ndefine: [gist](https://gist.github.com/u-ndefine/8e4bc21be4275f87fefe7b2a68487161) ![Demo](demo.png)",
+  "main": "polling.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikhailsdv/50-lines-bot.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mikhailsdv/50-lines-bot/issues"
+  },
+  "homepage": "https://github.com/mikhailsdv/50-lines-bot#readme",
+  "dependencies": {
+    "axios": "^1.1.3",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "grammy": "^1.12.0",
+    "pureimage": "^0.3.14"
+  }
+}
