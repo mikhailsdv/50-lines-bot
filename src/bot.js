@@ -48,6 +48,7 @@ bot.on("message:photo", async (ctx) => {
 		await processImage(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file_path}`, outputStream, ctx)
 		await ctx.replyWithPhoto(new InputFile(outputStream.getContents()))
 	} catch (err) {
+		console.log(err)
 		await ctx.reply("Не удалось обработать эту фотографию")
 	}
 })

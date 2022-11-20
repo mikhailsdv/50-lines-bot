@@ -28,11 +28,11 @@ const processImage = async (imageURL, outputStream) => {
 
 	let imageWidth, imageHeight, curveViolation
 	if (img.height >= img.width) {
-		curveViolation = 4
+		curveViolation = 5
 		imageWidth = Math.floor(img.width * IMAGE_SIZE / img.height)
 		imageHeight = IMAGE_SIZE
 	} else {
-		curveViolation = 3
+		curveViolation = 4
 		imageWidth = IMAGE_SIZE
 		imageHeight = Math.floor(img.height * IMAGE_SIZE / img.width)
 	}
@@ -41,19 +41,22 @@ const processImage = async (imageURL, outputStream) => {
 	const canvas = PImage.make(imageWidth, imageHeight)
 
 	const ctx = canvas.getContext("2d")
+	ctx.lineWidth = 2
+	ctx.lineJoin = "round"
+	ctx.imageSmoothingEnabled = true
+
 	ctx.fillStyle = "white"
 	ctx.fillRect(0, 0, imageWidth, imageHeight)
 
 	ctx.fillStyle = "black"
 	ctx.strokeStyle = "black"
+
 	for (let y = 0; y < LINES; y++) {
 		ctx.beginPath()
 		ctx.moveTo(0, 0)
-		ctx.lineWidth = 2
-		ctx.lineJoin = "round"
-		ctx.imageSmoothingEnabled = true
 
 		let l = 0
+		let prevLineX = 0, prevLineY = 0
 
 		for (let x = 0; x < imageWidth; x++) {
 			const c = grayscale(unit32toRGBA(img.getPixelRGBA(Math.floor(x / imageWidth * img.width), Math.floor(y * (img.height / LINES)))))
@@ -61,18 +64,21 @@ const processImage = async (imageURL, outputStream) => {
 			l += (255 - c) / 255
 
 			const m = (255 - c) / 255
+			prevLineX = x
+			prevLineY = (y + 0.5) * imageHeight / LINES + Math.sin(l * Math.PI / 2) * curveViolation * decel(m)
 
 			ctx.lineTo(
-				x,
-				(y + 0.5) * imageHeight / LINES + Math.sin(l * Math.PI / 2) * curveViolation * decel(m),
+				prevLineX,
+				prevLineY,
 			)
 		}
 		ctx.stroke()
 	}
 
-	console.log(`Done in ${Date.now() - start} ms`)
-	await PImage.encodeJPEGToStream(canvas, outputStream, 100)
-	return Date.now() - start
+	const finishedIn = Date.now() - start
+	console.log(`Done in ${finishedIn} ms`)
+	await PImage.encodeJPEGToStream(canvas, outputStream, 95)
+	return finishedIn
 }
 
 module.exports = processImage
