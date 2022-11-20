@@ -1,3 +1,4 @@
+const {HEIGHT, LINES} = require("./env")
 const axios = require("axios")
 const PImage = require("pureimage")
 
@@ -16,17 +17,14 @@ const unit32toRGBA = n => {
 const grayscale = rgba => rgba[3] === 0 ? 255 : rgba[0] * .3 + rgba[1] * .59 + rgba[2] * .11
 
 const processImage = async (imageURL, outputStream) => {
-	console.log(imageURL)
 	const start = Date.now()
 
-	await loadImage(imageURL)
 	const response = await axios({
 		method: 'get',
 		url: imageURL,
 		responseType: "stream",
 	});
 	const img = await PImage.decodeJPEGFromStream(response.data)
-	const HEIGHT = 750
 
 	const imageWidth = Math.floor(img.width * HEIGHT / img.height)
 	const imageHeight = HEIGHT
@@ -43,7 +41,7 @@ const processImage = async (imageURL, outputStream) => {
 
 	resultCtx.fillStyle = "black"
 	resultCtx.strokeStyle = "black"
-	for (let y = 0; y < 50; y++) {
+	for (let y = 0; y < LINES; y++) {
 		resultCtx.beginPath()
 		resultCtx.moveTo(0, 0)
 		resultCtx.lineWidth = 2
@@ -52,7 +50,7 @@ const processImage = async (imageURL, outputStream) => {
 		let l = 0
 
 		for (let x = 0; x < imageWidth; x++) {
-			const c = grayscale(unit32toRGBA(sourceCanvas.getPixelRGBA(x, Math.floor(y * (imageHeight / 50)))))
+			const c = grayscale(unit32toRGBA(sourceCanvas.getPixelRGBA(x, Math.floor(y * (imageHeight / LINES)))))
 
 			l += (255 - c) / 255
 
@@ -60,16 +58,15 @@ const processImage = async (imageURL, outputStream) => {
 
 			resultCtx.lineTo(
 				x,
-				Math.round((y + 0.5) * imageHeight / 50 + Math.sin(l * Math.PI / 2) * 5 * decel(m)),
+				(y + 0.5) * imageHeight / LINES + Math.sin(l * Math.PI / 2) * 5 * decel(m),
 			)
 		}
 		resultCtx.stroke()
 	}
 
-	console.log(`done in ${Date.now() - start}ms`)
-	await PImage.encodeJPEGToStream(resultCanvas, outputStream, 80)
-	outputStream.end()
-	return outputStream
+	console.log(`Done in ${Date.now() - start} ms`)
+	await PImage.encodeJPEGToStream(resultCanvas, outputStream, 100)
+	return Date.now() - start
 }
 
 module.exports = processImage

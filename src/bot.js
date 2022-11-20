@@ -1,9 +1,8 @@
 const {BOT_TOKEN} = require("./env")
-const {Bot, InlineKeyboard, InputFile, HttpError, GrammyError} = require("grammy")
+const {Bot, InputFile, HttpError, GrammyError} = require("grammy")
 const {trim} = require("./utils")
 const processImage = require("./main")
-const fs = require("fs");
-const path = require("path")
+const streamBuffers = require("stream-buffers");
 
 const bot = new Bot(BOT_TOKEN)
 
@@ -39,15 +38,19 @@ bot.command("start", async ctx => {
 })
 
 bot.on("message:photo", async (ctx) => {
-	const {file_id, width, height} = ctx.message.photo.at(-1)
+	await ctx.reply("Генерирую...")
+	const {file_id} = ctx.message.photo[ctx.message.photo.length - 1]
 	const {file_path} = await bot.api.getFile(file_id)
-	const streamPath = path.resolve(__dirname, "./image.jpg")
-	const outputStream = fs.createWriteStream(streamPath)
-	outputStream.on("finish", async () => {
-		console.log("finish")
-		await ctx.replyWithPhoto(new InputFile(fs.createReadStream(streamPath)))
-	})
-	const stream = await processImage(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file_path}`, outputStream)
+	try {
+		const outputStream = new streamBuffers.WritableStreamBuffer();
+		outputStream.on("finish", async () => {
+			console.log("finish")
+			await ctx.replyWithPhoto(new InputFile(outputStream.getContents()))
+		})
+		await processImage(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file_path}`, outputStream, ctx)
+	} catch (err) {
+		await ctx.reply("Не удалось обработать эту фотографию")
+	}
 })
 
 module.exports = bot
