@@ -1,4 +1,4 @@
-const {HEIGHT, LINES} = require("./env")
+const {IMAGE_SIZE, LINES} = require("./env")
 const axios = require("axios")
 const PImage = require("pureimage")
 
@@ -20,52 +20,58 @@ const processImage = async (imageURL, outputStream) => {
 	const start = Date.now()
 
 	const response = await axios({
-		method: 'get',
+		method: "get",
 		url: imageURL,
 		responseType: "stream",
 	});
 	const img = await PImage.decodeJPEGFromStream(response.data)
 
-	const imageWidth = Math.floor(img.width * HEIGHT / img.height)
-	const imageHeight = HEIGHT
+	let imageWidth, imageHeight, curveViolation
+	if (img.height >= img.width) {
+		curveViolation = 4
+		imageWidth = Math.floor(img.width * IMAGE_SIZE / img.height)
+		imageHeight = IMAGE_SIZE
+	} else {
+		curveViolation = 3
+		imageWidth = IMAGE_SIZE
+		imageHeight = Math.floor(img.height * IMAGE_SIZE / img.width)
+	}
 
-	const sourceCanvas = PImage.make(imageWidth, imageHeight)
-	const resultCanvas = PImage.make(imageWidth, imageHeight)
 
-	const sourceCtx = sourceCanvas.getContext("2d")
-	const resultCtx = resultCanvas.getContext("2d")
-	resultCtx.fillStyle = "white"
-	resultCtx.fillRect(0, 0, imageWidth, imageHeight)
+	const canvas = PImage.make(imageWidth, imageHeight)
 
-	sourceCtx.drawImage(img, 0, 0, imageWidth, imageHeight)
+	const ctx = canvas.getContext("2d")
+	ctx.fillStyle = "white"
+	ctx.fillRect(0, 0, imageWidth, imageHeight)
 
-	resultCtx.fillStyle = "black"
-	resultCtx.strokeStyle = "black"
+	ctx.fillStyle = "black"
+	ctx.strokeStyle = "black"
 	for (let y = 0; y < LINES; y++) {
-		resultCtx.beginPath()
-		resultCtx.moveTo(0, 0)
-		resultCtx.lineWidth = 2
-		resultCtx.lineJoin = "round"
+		ctx.beginPath()
+		ctx.moveTo(0, 0)
+		ctx.lineWidth = 2
+		ctx.lineJoin = "round"
+		ctx.imageSmoothingEnabled = true
 
 		let l = 0
 
 		for (let x = 0; x < imageWidth; x++) {
-			const c = grayscale(unit32toRGBA(sourceCanvas.getPixelRGBA(x, Math.floor(y * (imageHeight / LINES)))))
+			const c = grayscale(unit32toRGBA(img.getPixelRGBA(Math.floor(x / imageWidth * img.width), Math.floor(y * (img.height / LINES)))))
 
 			l += (255 - c) / 255
 
 			const m = (255 - c) / 255
 
-			resultCtx.lineTo(
+			ctx.lineTo(
 				x,
-				(y + 0.5) * imageHeight / LINES + Math.sin(l * Math.PI / 2) * 5 * decel(m),
+				(y + 0.5) * imageHeight / LINES + Math.sin(l * Math.PI / 2) * curveViolation * decel(m),
 			)
 		}
-		resultCtx.stroke()
+		ctx.stroke()
 	}
 
 	console.log(`Done in ${Date.now() - start} ms`)
-	await PImage.encodeJPEGToStream(resultCanvas, outputStream, 100)
+	await PImage.encodeJPEGToStream(canvas, outputStream, 100)
 	return Date.now() - start
 }
 
