@@ -37,7 +37,6 @@ const processImage = async (imageURL, outputStream) => {
 		imageHeight = Math.floor(img.height * IMAGE_SIZE / img.width)
 	}
 
-
 	const canvas = PImage.make(imageWidth, imageHeight)
 
 	const ctx = canvas.getContext("2d")
@@ -56,7 +55,6 @@ const processImage = async (imageURL, outputStream) => {
 		ctx.moveTo(0, 0)
 
 		let l = 0
-		let prevLineX = 0, prevLineY = 0
 
 		for (let x = 0; x < imageWidth; x++) {
 			const c = grayscale(unit32toRGBA(img.getPixelRGBA(Math.floor(x / imageWidth * img.width), Math.floor(y * (img.height / LINES)))))
@@ -64,12 +62,10 @@ const processImage = async (imageURL, outputStream) => {
 			l += (255 - c) / 255
 
 			const m = (255 - c) / 255
-			prevLineX = x
-			prevLineY = (y + 0.5) * imageHeight / LINES + Math.sin(l * Math.PI / 2) * curveViolation * decel(m)
 
 			ctx.lineTo(
-				prevLineX,
-				prevLineY,
+				x,
+				(y + 0.5) * imageHeight / LINES + Math.sin(l * Math.PI / 2) * curveViolation * decel(m),
 			)
 		}
 		ctx.stroke()
